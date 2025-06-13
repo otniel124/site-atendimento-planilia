@@ -1,38 +1,33 @@
 import streamlit as st
-import pandas as pd
 import time
-import os
-from datetime import datetime
 
-ARQUIVO_CSV = "atendimentos.csv"
+st.set_page_config(page_title="Sistema de Atendimento", layout="centered")
 
-# Garante que o arquivo exista com cabeçalhos
-if not os.path.exists(ARQUIVO_CSV):
-    df_inicial = pd.DataFrame(columns=["Nome", "Motivo", "Data", "Horário", "Unidade"])
-    df_inicial.to_csv(ARQUIVO_CSV, index=False)
+fila_atendimentos = []
 
-st.title("📋 Sistema de Atendimento")
+st.title("🧾 Sistema de Atendimento Online")
 
-st.header("Novo Atendimento")
-nome = st.text_input("Nome")
-motivo = st.text_input("Motivo")
-unidade = st.selectbox("Unidade", ["Unidade A", "Unidade B", "Unidade C"])
+with st.form("adicionar_atendimento"):
+    nome = st.text_input("Nome do cliente")
+    motivo = st.text_input("Motivo do atendimento")
+    enviado = st.form_submit_button("➕ Adicionar Atendimento")
 
-data_atual = datetime.now().strftime('%d/%m/%Y')
-hora_atual = time.strftime('%H:%M:%S')
-st.info(f"📅 Data: {data_atual} | 🕒 Horário atual: {hora_atual}")
+    if enviado and nome and motivo:
+        horario = time.strftime('%H:%M:%S')
+        atendimento = {"nome": nome, "motivo": motivo, "horario": horario}
+        fila_atendimentos.append(atendimento)
+        st.success(f"✅ Atendimento de {nome} adicionado com sucesso!")
 
-if st.button("Registrar"):
-    if nome and motivo:
-        novo = pd.DataFrame([[nome, motivo, data_atual, hora_atual, unidade]],
-                            columns=["Nome", "Motivo", "Data", "Horário", "Unidade"])
-        novo.to_csv(ARQUIVO_CSV, mode='a', index=False, header=False)
-        st.success(f"✅ Atendimento de {nome} registrado com sucesso!")
+st.subheader("📋 Fila de Atendimentos")
+if fila_atendimentos:
+    for i, a in enumerate(fila_atendimentos, 1):
+        st.write(f"{i}. {a['nome']} - {a['motivo']} (às {a['horario']})")
+else:
+    st.info("Fila vazia.")
+
+if st.button("✅ Atender próximo cliente"):
+    if fila_atendimentos:
+        a = fila_atendimentos.pop(0)
+        st.success(f"👥 Atendendo {a['nome']} - Motivo: {a['motivo']} (às {a['horario']})")
     else:
-        st.warning("⚠️ Preencha nome e motivo.")
-
-st.divider()
-
-st.header("📄 Lista de Atendimentos")
-df = pd.read_csv(ARQUIVO_CSV)
-st.dataframe(df, use_container_width=True
+        st.warning("Nenhum atendimento na fila.")
